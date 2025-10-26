@@ -88,6 +88,9 @@ class HuaweiSSHClient:
         """
         Valida se o comando está na whitelist e não contém palavras proibidas.
 
+        IMPORTANTE: Primeiro verifica whitelist, depois palavras proibidas.
+        Isso evita falsos positivos (ex: "display interface" não deve ser bloqueado).
+
         Args:
             command: Comando a ser validado
 
@@ -96,23 +99,15 @@ class HuaweiSSHClient:
         """
         command_lower = command.lower().strip()
 
-        # Verificar se contém palavras proibidas
-        for forbidden in self.FORBIDDEN_KEYWORDS:
-            if forbidden.lower() in command_lower:
-                error_msg = (
-                    f"COMANDO PROIBIDO detectado: '{command}' "
-                    f"contém palavra-chave proibida: '{forbidden}'"
-                )
-                logger.error(error_msg)
-                raise SSHClientError(error_msg)
-
-        # Verificar se está na whitelist
+        # PRIMEIRO: Verificar se está na whitelist
         is_allowed = False
         for allowed in self.ALLOWED_COMMANDS:
             if command_lower.startswith(allowed.lower()):
                 is_allowed = True
-                break
+                logger.info(f"Comando validado com sucesso: {command}")
+                return  # Comando permitido, não verificar palavras proibidas
 
+        # SEGUNDO: Se não está na whitelist, rejeitar
         if not is_allowed:
             error_msg = (
                 f"Comando não autorizado: '{command}'. "
@@ -120,8 +115,6 @@ class HuaweiSSHClient:
             )
             logger.error(error_msg)
             raise SSHClientError(error_msg)
-
-        logger.info(f"Comando validado com sucesso: {command}")
 
     def _log_command_execution(
         self,

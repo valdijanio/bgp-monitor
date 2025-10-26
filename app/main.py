@@ -5,6 +5,7 @@ Aplicação principal FastAPI para BGP Monitor.
 import logging
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 from app.core.config import settings
@@ -28,6 +29,14 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Montar diretório de arquivos estáticos
+static_path = Path(__file__).parent.parent / "frontend" / "static"
+if static_path.exists():
+    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+    logger.info(f"Arquivos estáticos montados em: {static_path}")
+else:
+    logger.warning(f"Diretório de arquivos estáticos não encontrado: {static_path}")
 
 # Registrar routers da API
 app.include_router(bgp.router)

@@ -10,6 +10,11 @@ let updateTimer = null;
 document.addEventListener('DOMContentLoaded', function() {
     console.log('BGP Monitor iniciado');
 
+    // Inicializar gráficos
+    if (typeof initializeCharts === 'function') {
+        initializeCharts();
+    }
+
     // Carregar dados iniciais
     loadDashboardData();
 
@@ -53,6 +58,11 @@ async function loadDashboardData() {
             loadInterfaces(),
             loadRecentEvents()
         ]);
+
+        // Atualizar gráficos
+        if (typeof updateAllCharts === 'function') {
+            await updateAllCharts();
+        }
 
         // Atualizar timestamp da \u00faltima atualiza\u00e7\u00e3o
         lastUpdate = new Date();

@@ -49,6 +49,23 @@
             </div>
         </section>
 
+        <section class="charts-grid">
+            <div class="panel chart-panel">
+                <h2>Distribuição BGP</h2>
+                <canvas id="bgp-status-chart"></canvas>
+            </div>
+
+            <div class="panel chart-panel">
+                <h2>Top Interfaces por Utilização</h2>
+                <canvas id="interface-utilization-chart"></canvas>
+            </div>
+        </section>
+
+        <section class="panel chart-panel-wide">
+            <h2>Histórico de Tráfego</h2>
+            <canvas id="traffic-history-chart"></canvas>
+        </section>
+
         <section class="content-grid">
             <div class="panel">
                 <h2>Sessões BGP</h2>
@@ -71,6 +88,11 @@
                 <p class="loading">Carregando interfaces...</p>
             </div>
         </section>
+
+        <section class="panel chart-panel-wide">
+            <h2>Timeline de Eventos</h2>
+            <canvas id="events-timeline-chart"></canvas>
+        </section>
     </main>
 
     <footer>
@@ -81,8 +103,10 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="/static/js/utils.js"></script>
     <script src="/static/js/api-client.js"></script>
+    <script src="/static/js/charts.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
 </html>

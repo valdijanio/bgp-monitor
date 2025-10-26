@@ -161,7 +161,7 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📂 ARQUIVOS IMPLEMENTADOS (24 módulos):
+📂 ARQUIVOS IMPLEMENTADOS (25 módulos):
 
   Core (4):
     ✓ app/core/config.py - Settings sem valores padrão
@@ -191,13 +191,14 @@
   Database (1):
     ✓ schema.sql - Schema completo (8 tabelas)
 
-  Frontend (6):
-    ✓ frontend/index.html - Dashboard HTML (atualizado)
-    ✓ frontend/static/css/style.css - Estilos completos
+  Frontend (7):
+    ✓ frontend/index.html - Dashboard HTML com gráficos
+    ✓ frontend/static/css/style.css - Estilos completos + charts
     ✓ frontend/static/js/api-client.js - Cliente API REST
     ✓ frontend/static/js/utils.js - Funções utilitárias
-    ✓ frontend/static/js/main.js - Dashboard dinâmico
-    ✓ HTTP Polling a cada 10 segundos
+    ✓ frontend/static/js/charts.js - Gerenciamento Chart.js (4 gráficos)
+    ✓ frontend/static/js/main.js - Dashboard dinâmico + gráficos
+    ✓ HTTP Polling a cada 10 segundos (dados + gráficos)
 
   Config (6):
     ✓ pyproject.toml - Configuração Black
@@ -244,9 +245,9 @@
      - Sistema de alertas
      - Histórico e eventos
 
-  ✅ Fase 3 - EM PROGRESSO (SUB-FASE 3.1 COMPLETA)
+  ✅ Fase 3 - EM PROGRESSO (SUB-FASES 3.1 e 3.2 COMPLETAS)
      ✓ SUB-FASE 3.1: Frontend dinâmico (integração com API)
-     ⏳ SUB-FASE 3.2: Gráficos interativos (Chart.js)
+     ✓ SUB-FASE 3.2: Gráficos interativos (Chart.js)
      ⏳ SUB-FASE 3.3: Filtros, busca e melhorias UX
      ⏳ Testes unitários e integração (pendente)
 
@@ -366,8 +367,66 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Data: 26/10/2024
-Versão: 3.1.0
-Status: ✅ SISTEMA FUNCIONAL - DASHBOARD DINÂMICO OPERACIONAL
+📊 SUB-FASE 3.2 - COMPLETA (Gráficos Interativos):
 
-O BGP Monitor está coletando e exibindo dados em tempo real!
+  ✅ Chart.js v4.4.0 Integrado:
+     - CDN oficial carregado no HTML
+     - Configuração global aplicada
+     - Paleta de cores profissional
+     - Atualizações sem animação para performance
+
+  ✅ Gráfico 1 - Pizza/Doughnut (BGP Status):
+     - Distribuição de sessões BGP por status
+     - Cores: Verde (Established), Vermelho (Down), Amarelo (Idle)
+     - Tooltip com percentuais calculados
+     - Legenda posicionada abaixo
+
+  ✅ Gráfico 2 - Barras (Top Interfaces):
+     - Top 10 interfaces por utilização total
+     - Barras duplas: IN (azul) e OUT (roxo)
+     - Escala Y de 0-100%
+     - Ordenação automática por carga
+
+  ✅ Gráfico 3 - Linha/Área (Histórico de Tráfego):
+     - Timeline das últimas 20 medições
+     - Duas séries: IN (verde) e OUT (azul)
+     - Área preenchida com transparência
+     - Valores em Mbps formatados
+     - Tensão de curva suave (0.4)
+
+  ✅ Gráfico 4 - Linha/Área Empilhada (Timeline Eventos):
+     - Eventos agrupados por hora e severidade
+     - Três séries: Critical (vermelho), Warning (amarelo), Info (azul)
+     - Áreas preenchidas para visualização de volume
+     - Tooltip mostra contagem de eventos
+
+  ✅ Gerenciamento de Gráficos (charts.js):
+     - Funções de criação separadas para cada gráfico
+     - Funções de atualização assíncronas
+     - Destroy antes de recriar (evita memory leak)
+     - initializeCharts() na inicialização
+     - updateAllCharts() a cada 10 segundos
+     - Promise.all para atualização paralela
+
+  ✅ Integração com Dashboard:
+     - Gráficos carregados no DOMContentLoaded
+     - Atualizados junto com tabelas
+     - Layout responsivo (charts-grid)
+     - Canvas com max-height definido
+     - Grid 2 colunas em desktop, 1 em mobile
+
+  ✅ Funcionalidades Chart.js:
+     - Interação mode: 'index'
+     - Tooltips personalizados
+     - Legendas com position: 'bottom'
+     - Escala Y configurável
+     - Formatação de valores (Mbps, %, contagem)
+     - Cores consistentes com design system
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Data: 26/10/2024
+Versão: 3.2.0
+Status: ✅ SISTEMA FUNCIONAL - GRÁFICOS INTERATIVOS OPERACIONAIS
+
+O BGP Monitor está visualizando dados em gráficos interativos em tempo real!

@@ -102,6 +102,30 @@ main {
     margin-bottom: 2rem;
 }
 
+/* Charts grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-panel {
+    min-height: 300px;
+}
+
+.chart-panel canvas {
+    max-height: 300px;
+}
+
+.chart-panel-wide {
+    min-height: 400px;
+}
+
+.chart-panel-wide canvas {
+    max-height: 400px;
+}
+
 /* Panel */
 .panel {
     background: white;
@@ -327,11 +351,25 @@ footer a:hover {
 /* Responsive */
 @media (max-width: 768px) {
     .status-cards,
-    .content-grid {
+    .content-grid,
+    .charts-grid {
         grid-template-columns: 1fr;
     }
 
     header h1 {
         font-size: 1.5rem;
+    }
+
+    .chart-panel,
+    .chart-panel-wide {
+        min-height: 250px;
+    }
+
+    .chart-panel canvas {
+        max-height: 250px;
+    }
+
+    .chart-panel-wide canvas {
+        max-height: 300px;
     }
 }
