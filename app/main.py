@@ -1,9 +1,9 @@
 """
 Aplicação principal FastAPI para BGP Monitor.
 """
+
 import logging
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 
@@ -13,10 +13,7 @@ from app.core.config import settings
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("logs/bgp_monitor.log"),
-        logging.StreamHandler()
-    ]
+    handlers=[logging.FileHandler("logs/bgp_monitor.log"), logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
@@ -27,7 +24,7 @@ app = FastAPI(
     description="Sistema de monitoramento BGP para Huawei NE8000",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 
@@ -71,8 +68,4 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Endpoint de health check."""
-    return {
-        "status": "healthy",
-        "service": "bgp-monitor",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "bgp-monitor", "version": "1.0.0"}

@@ -4,6 +4,7 @@ Cliente SSH para conexão com Huawei NE8000.
 CRÍTICO: Apenas comandos READ-ONLY (família 'display').
 NUNCA executar comandos de configuração.
 """
+
 import logging
 import time
 from typing import Optional
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class SSHClientError(Exception):
     """Exceção customizada para erros do cliente SSH."""
+
     pass
 
 
@@ -59,7 +61,7 @@ class HuaweiSSHClient:
         port: Optional[int] = None,
         username: Optional[str] = None,
         password: Optional[str] = None,
-        timeout: int = 30
+        timeout: int = 30,
     ):
         """
         Inicializa o cliente SSH.
@@ -123,7 +125,7 @@ class HuaweiSSHClient:
         command: str,
         execution_time_ms: int,
         success: bool,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
     ) -> None:
         """
         Registra a execução de comando no banco de dados para auditoria.
@@ -168,7 +170,7 @@ class HuaweiSSHClient:
                 password=self.password,
                 timeout=self.timeout,
                 look_for_keys=False,
-                allow_agent=False
+                allow_agent=False,
             )
 
             self.connected = True
@@ -213,10 +215,7 @@ class HuaweiSSHClient:
         try:
             logger.info(f"Executando comando: {command}")
 
-            stdin, stdout, stderr = self.client.exec_command(
-                command,
-                timeout=self.timeout
-            )
+            stdin, stdout, stderr = self.client.exec_command(command, timeout=self.timeout)
 
             output = stdout.read().decode("utf-8")
             error_output = stderr.read().decode("utf-8")

@@ -4,6 +4,7 @@ Gerenciamento de banco de dados SQLite com queries SQL diretas.
 IMPORTANTE: Não usar ORM (SQLAlchemy). Apenas SQL puro.
 SEMPRE usar 'with db.get_connection()' para transações.
 """
+
 import sqlite3
 import logging
 from contextlib import contextmanager
@@ -78,11 +79,7 @@ class Database:
         finally:
             conn.close()
 
-    def execute_query(
-        self,
-        query: str,
-        params: Optional[Tuple] = None
-    ) -> List[Dict[str, Any]]:
+    def execute_query(self, query: str, params: Optional[Tuple] = None) -> List[Dict[str, Any]]:
         """
         Executa uma query SELECT e retorna os resultados.
 
@@ -112,9 +109,7 @@ class Database:
             return results
 
     def execute_single(
-        self,
-        query: str,
-        params: Optional[Tuple] = None
+        self, query: str, params: Optional[Tuple] = None
     ) -> Optional[Dict[str, Any]]:
         """
         Executa uma query SELECT e retorna apenas o primeiro resultado.
@@ -133,11 +128,7 @@ class Database:
         results = self.execute_query(query, params)
         return results[0] if results else None
 
-    def execute_write(
-        self,
-        query: str,
-        params: Optional[Tuple] = None
-    ) -> int:
+    def execute_write(self, query: str, params: Optional[Tuple] = None) -> int:
         """
         Executa uma query de escrita (INSERT, UPDATE, DELETE).
 
@@ -161,11 +152,7 @@ class Database:
             conn.commit()
             return cursor.lastrowid if cursor.lastrowid > 0 else cursor.rowcount
 
-    def execute_many(
-        self,
-        query: str,
-        params_list: List[Tuple]
-    ) -> int:
+    def execute_many(self, query: str, params_list: List[Tuple]) -> int:
         """
         Executa múltiplas queries de escrita em batch.
 

@@ -13,7 +13,7 @@ def main():
         host=settings.API_HOST,
         port=settings.API_PORT,
         reload=True,
-        log_level="info"
+        log_level="info",
     )
 
 

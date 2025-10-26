@@ -1,6 +1,7 @@
 """
 Dataclasses para eventos e logs do sistema.
 """
+
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional

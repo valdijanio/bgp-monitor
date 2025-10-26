@@ -38,7 +38,7 @@ def check_quality() -> bool:
     # Executar Black (verificação)
     black_result = run_command(
         "black . --check --config pyproject.toml",
-        "Verificando formatação com Black (100 caracteres)"
+        "Verificando formatação com Black (100 caracteres)",
     )
     if black_result != 0:
         print("\n❌ Black encontrou problemas de formatação!")
@@ -49,8 +49,7 @@ def check_quality() -> bool:
 
     # Executar Flake8
     flake8_result = run_command(
-        "flake8 . --config .flake8",
-        "Verificando qualidade com Flake8 (120 caracteres)"
+        "flake8 . --config .flake8", "Verificando qualidade com Flake8 (120 caracteres)"
     )
     if flake8_result != 0:
         print("\n❌ Flake8 encontrou problemas de qualidade!")
@@ -64,10 +63,7 @@ def check_quality() -> bool:
 
 def format_code() -> None:
     """Formata o código usando Black."""
-    run_command(
-        "black . --config pyproject.toml",
-        "Formatando código com Black"
-    )
+    run_command("black . --config pyproject.toml", "Formatando código com Black")
     print("\n✅ Código formatado com sucesso!\n")
 
 
@@ -77,15 +73,9 @@ def main():
         description="Script de setup e validação de qualidade do BGP Monitor"
     )
     parser.add_argument(
-        "--quality",
-        action="store_true",
-        help="Executa verificações de qualidade (Black + Flake8)"
+        "--quality", action="store_true", help="Executa verificações de qualidade (Black + Flake8)"
     )
-    parser.add_argument(
-        "--format",
-        action="store_true",
-        help="Formata o código usando Black"
-    )
+    parser.add_argument("--format", action="store_true", help="Formata o código usando Black")
 
     args = parser.parse_args()
 

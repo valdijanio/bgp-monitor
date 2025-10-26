@@ -3,6 +3,7 @@ Configurações da aplicação carregadas a partir do arquivo .env.
 
 IMPORTANTE: Não pode ter valores padrão - todas as variáveis devem estar no .env
 """
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,10 +11,7 @@ class Settings(BaseSettings):
     """Configurações da aplicação BGP Monitor."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=False,
-        extra="ignore"
+        env_file=".env", env_file_encoding="utf-8", case_sensitive=False, extra="ignore"
     )
 
     # Configurações SSH do Huawei NE8000
