@@ -202,6 +202,85 @@ def parse_interface_brief(output: str) -> List[Interface]:
     return interfaces
 
 
+def parse_interface_description(output: str) -> List[Interface]:  # noqa: C901
+    """
+    Parseia a saída do comando 'display interface description'.
+
+    Este comando mostra TODAS as interfaces, incluindo portas SFP down/inativas.
+
+    Formato esperado (Huawei NE8000):
+    Interface                     PHY     Protocol Description
+    Eth0/0/0                      up      up
+    GE0/7/0(10G)                  up      down     P2P - CGNAT - 01
+    GE0/7/2(10G)                  down    down
+
+    Args:
+        output: Saída do comando display interface description
+
+    Returns:
+        Lista de objetos Interface (incluindo interfaces down)
+    """
+    interfaces = []
+
+    try:
+        lines = output.strip().split("\n")
+
+        for line in lines:
+            line_stripped = line.strip()
+
+            # Pular linhas vazias
+            if not line_stripped:
+                continue
+
+            # Pular cabeçalhos e legendas (linhas 1-13 tipicamente)
+            if "Interface" in line_stripped and "PHY" in line_stripped:
+                continue
+            if line_stripped.startswith("---") or line_stripped.startswith("==="):
+                continue
+            if line_stripped.startswith("(") or line_stripped.startswith("*down"):
+                continue
+            if "current state" in line_stripped.lower():
+                continue
+
+            # Parsear linha de interface
+            # Formato: Nome(capacidade)  PHY  Protocol  Description(opcional)
+            # Usar split com maxsplit para preservar descrição com espaços
+            parts = line_stripped.split(None, 3)  # Split máximo em 4 partes
+
+            if len(parts) < 3:
+                continue
+
+            # Extrair nome (remover sufixo de capacidade como (10G))
+            name_raw = parts[0]
+            name = re.sub(r"\(\d+[GM]\)", "", name_raw)  # Remove (10G), (1G), etc
+
+            # Status físico e protocolo
+            phy_status = parts[1].lower()
+            protocol_status = parts[2].lower()
+
+            # Descrição (opcional, pode não existir)
+            description = parts[3].strip() if len(parts) > 3 else None
+
+            # Status geral: UP apenas se AMBOS up, senão DOWN
+            if phy_status == "up" and protocol_status == "up":
+                status = "up"
+            else:
+                status = "down"
+
+            interface = Interface(
+                name=name, status=status, description=description, bandwidth_capacity=0
+            )
+
+            interfaces.append(interface)
+            logger.debug(f"Interface parseada (description): {name} - {status} - {description}")
+
+    except Exception as e:
+        logger.error(f"Erro ao parsear interface description: {e}")
+        logger.debug(f"Output problemático: {output}")
+
+    return interfaces
+
+
 def parse_interface(output: str) -> List[Interface]:
     """
     Parseia a saída do comando 'display interface <name>' (detalhado).

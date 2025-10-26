@@ -11,7 +11,7 @@ from datetime import datetime
 from app.core.ssh_client import ssh_client
 from app.core.database import db
 from app.models.interface import Interface
-from app.services.parser import parse_interface_brief, parse_interface_statistics
+from app.services.parser import parse_interface_description, parse_interface_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,8 @@ def collect_interfaces() -> List[Interface]:
     """
     Coleta informações de todas as interfaces.
 
-    Executa 'display interface brief' no NE8000 e parseia o resultado.
+    Executa 'display interface description' no NE8000 e parseia o resultado.
+    Este comando retorna TODAS as interfaces, incluindo portas SFP down/inativas.
 
     Returns:
         Lista de Interface coletadas
@@ -31,13 +32,13 @@ def collect_interfaces() -> List[Interface]:
     logger.info("Iniciando coleta de interfaces...")
 
     try:
-        # Executar comando no NE8000 (brief para listar todas)
-        output = ssh_client.execute_command("display interface brief")
+        # Executar comando no NE8000 (description para listar TODAS, inclusive SFP down)
+        output = ssh_client.execute_command("display interface description")
 
         # Parsear saída
-        interfaces = parse_interface_brief(output)
+        interfaces = parse_interface_description(output)
 
-        logger.info(f"Coletadas {len(interfaces)} interfaces")
+        logger.info(f"Coletadas {len(interfaces)} interfaces (incluindo SFP down)")
 
         # Para cada interface, tentar coletar estatísticas
         for interface in interfaces:
