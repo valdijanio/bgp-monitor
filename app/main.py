@@ -8,6 +8,8 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 
 from app.core.config import settings
+from app.api import bgp, interfaces, events
+from app.scheduler.jobs import setup_scheduler, start_scheduler, stop_scheduler
 
 # Configurar logging
 logging.basicConfig(
@@ -27,6 +29,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# Registrar routers da API
+app.include_router(bgp.router)
+app.include_router(interfaces.router)
+app.include_router(events.router)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -35,11 +42,20 @@ async def startup_event():
     logger.info(f"Configurações carregadas: SSH Host={settings.SSH_HOST}")
     logger.info(f"Banco de dados: {settings.DB_PATH}")
 
+    # Configurar e iniciar scheduler
+    setup_scheduler()
+    start_scheduler()
+    logger.info("Sistema de coleta automática iniciado")
+
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Evento executado ao desligar a aplicação."""
     logger.info("Encerrando BGP Monitor...")
+
+    # Parar scheduler
+    stop_scheduler()
+    logger.info("Sistema de coleta automática encerrado")
 
 
 @app.get("/", response_class=HTMLResponse)
