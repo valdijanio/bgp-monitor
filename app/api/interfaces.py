@@ -207,13 +207,13 @@ async def get_interface_history(
         """
         history = db.execute_query(query, (name,))
 
+        # Retornar lista vazia se não houver histórico (não é erro)
         if not history:
-            raise HTTPException(status_code=404, detail=f"Sem histórico para interface {name}")
+            logger.info(f"Nenhum histórico encontrado para interface {name}")
+            return []
 
         return history
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Erro ao buscar histórico de {name}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar histórico")

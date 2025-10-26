@@ -197,13 +197,13 @@ async def get_bgp_history(
         """
         history = db.execute_query(query, (peer_ip,))
 
+        # Retornar lista vazia se não houver histórico (não é erro)
         if not history:
-            raise HTTPException(status_code=404, detail=f"Sem histórico para peer {peer_ip}")
+            logger.info(f"Nenhum histórico encontrado para peer {peer_ip}")
+            return []
 
         return history
 
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Erro ao buscar histórico BGP de {peer_ip}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar histórico BGP")

@@ -257,19 +257,53 @@ async function updateTrafficHistoryChart() {
     if (!trafficHistoryChart) return;
 
     try {
-        // Pegar primeira interface com status UP para demonstração
-        const interfaces = await apiClient.getInterfaces('up');
+        // Pegar todas interfaces (UP primeiro)
+        const interfaces = await apiClient.getInterfaces();
 
-        if (interfaces.length === 0) {
-            console.warn('Nenhuma interface UP encontrada');
+        if (!interfaces || interfaces.length === 0) {
+            console.warn('Nenhuma interface encontrada');
+            // Limpar gráfico
+            trafficHistoryChart.data.labels = [];
+            trafficHistoryChart.data.datasets[0].data = [];
+            trafficHistoryChart.data.datasets[1].data = [];
+            trafficHistoryChart.update('none');
             return;
         }
 
-        const firstInterface = interfaces[0];
-        const history = await apiClient.getInterfaceHistory(firstInterface.name, 20);
+        // Ordenar: UP primeiro, depois DOWN
+        const sortedInterfaces = interfaces.sort((a, b) => {
+            if (a.status === 'up' && b.status !== 'up') return -1;
+            if (a.status !== 'up' && b.status === 'up') return 1;
+            return 0;
+        });
+
+        // Tentar pegar histórico da primeira interface que tiver dados
+        let history = [];
+        let selectedInterface = null;
+
+        for (const iface of sortedInterfaces) {
+            try {
+                const ifaceHistory = await apiClient.getInterfaceHistory(iface.name, 20);
+                if (ifaceHistory && ifaceHistory.length > 0) {
+                    history = ifaceHistory;
+                    selectedInterface = iface;
+                    break;
+                }
+            } catch (e) {
+                // Continuar tentando próxima interface
+                continue;
+            }
+        }
 
         if (!history || history.length === 0) {
-            console.warn('Sem histórico disponível');
+            console.warn('Nenhuma interface com histórico disponível');
+            // Limpar gráfico
+            trafficHistoryChart.data.labels = [];
+            trafficHistoryChart.data.datasets[0].data = [];
+            trafficHistoryChart.data.datasets[1].data = [];
+            trafficHistoryChart.data.datasets[0].label = 'Tráfego IN (Mbps)';
+            trafficHistoryChart.data.datasets[1].label = 'Tráfego OUT (Mbps)';
+            trafficHistoryChart.update('none');
             return;
         }
 
@@ -291,9 +325,9 @@ async function updateTrafficHistoryChart() {
 
         trafficHistoryChart.data.labels = labels;
         trafficHistoryChart.data.datasets[0].data = trafficIn;
-        trafficHistoryChart.data.datasets[0].label = `${firstInterface.name} - IN (Mbps)`;
+        trafficHistoryChart.data.datasets[0].label = `${selectedInterface.name} - IN (Mbps)`;
         trafficHistoryChart.data.datasets[1].data = trafficOut;
-        trafficHistoryChart.data.datasets[1].label = `${firstInterface.name} - OUT (Mbps)`;
+        trafficHistoryChart.data.datasets[1].label = `${selectedInterface.name} - OUT (Mbps)`;
         trafficHistoryChart.update('none');
 
     } catch (error) {
