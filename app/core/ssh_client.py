@@ -7,6 +7,7 @@ NUNCA executar comandos de configuração.
 
 import logging
 import time
+import threading
 from typing import Optional
 import paramiko
 
@@ -79,7 +80,9 @@ class HuaweiSSHClient:
         self.password = password or settings.SSH_PASSWORD
         self.timeout = timeout
         self.client: Optional[paramiko.SSHClient] = None
+        self.shell: Optional[paramiko.Channel] = None
         self.connected = False
+        self._command_lock = threading.Lock()  # Lock para serializar comandos
 
     def _validate_command(self, command: str) -> None:
         """
@@ -173,8 +176,17 @@ class HuaweiSSHClient:
                 allow_agent=False,
             )
 
+            # Criar shell interativo para evitar 'Administratively prohibited'
+            self.shell = self.client.invoke_shell()
+            self.shell.settimeout(self.timeout)
+
+            # Limpar buffer inicial (banner, prompts, etc)
+            time.sleep(1)
+            if self.shell.recv_ready():
+                self.shell.recv(65535)
+
             self.connected = True
-            logger.info("Conexão SSH estabelecida com sucesso")
+            logger.info("Conexão SSH e shell interativo estabelecidos com sucesso")
 
         except Exception as e:
             error_msg = f"Erro ao conectar via SSH: {e}"
@@ -183,14 +195,21 @@ class HuaweiSSHClient:
 
     def disconnect(self) -> None:
         """Fecha a conexão SSH."""
+        if self.shell:
+            self.shell.close()
+            self.shell = None
         if self.client:
             self.client.close()
+            self.client = None
             self.connected = False
             logger.info("Conexão SSH fechada")
 
     def execute_command(self, command: str) -> str:
         """
-        Executa um comando no equipamento (apenas comandos da whitelist).
+        Executa um comando no equipamento usando shell interativo.
+
+        IMPORTANTE: Usa threading.Lock para serializar comandos e evitar
+        'Administratively prohibited' error em equipamentos Huawei.
 
         Args:
             command: Comando a ser executado
@@ -204,37 +223,61 @@ class HuaweiSSHClient:
         # Validar comando antes de executar
         self._validate_command(command)
 
-        if not self.connected or not self.client:
+        if not self.connected or not self.shell:
             self.connect()
 
-        start_time = time.time()
-        success = False
-        error_message = None
-        output = ""
+        # Lock para serializar comandos (evita exec_command simultâneos)
+        with self._command_lock:
+            start_time = time.time()
+            success = False
+            error_message = None
+            output = ""
 
-        try:
-            logger.info(f"Executando comando: {command}")
+            try:
+                logger.info(f"Executando comando via shell interativo: {command}")
 
-            stdin, stdout, stderr = self.client.exec_command(command, timeout=self.timeout)
+                # Limpar buffer antes do comando
+                if self.shell.recv_ready():
+                    self.shell.recv(65535)
 
-            output = stdout.read().decode("utf-8")
-            error_output = stderr.read().decode("utf-8")
+                # Enviar comando + newline
+                self.shell.send(command + "\n")
 
-            if error_output:
-                logger.warning(f"Comando gerou erro: {error_output}")
-                error_message = error_output
+                # Aguardar saída (com timeout adaptativo)
+                time.sleep(0.5)
+                max_wait = 10  # 10 segundos máximo
+                waited = 0
 
-            success = True
-            logger.info(f"Comando executado com sucesso. Output: {len(output)} bytes")
+                while not self.shell.recv_ready() and waited < max_wait:
+                    time.sleep(0.1)
+                    waited += 0.1
 
-        except Exception as e:
-            error_message = str(e)
-            logger.error(f"Erro ao executar comando '{command}': {e}")
-            raise SSHClientError(f"Erro ao executar comando: {e}") from e
+                # Ler output
+                output_bytes = b""
+                while self.shell.recv_ready():
+                    chunk = self.shell.recv(65535)
+                    output_bytes += chunk
+                    time.sleep(0.1)  # Pequeno delay para garantir recebimento completo
 
-        finally:
-            execution_time_ms = int((time.time() - start_time) * 1000)
-            self._log_command_execution(command, execution_time_ms, success, error_message)
+                output = output_bytes.decode("utf-8", errors="ignore")
+
+                # Limpar prompt e comando ecoado
+                output_lines = output.split("\n")
+                if len(output_lines) > 2:
+                    # Remove primeira linha (comando ecoado) e última (prompt)
+                    output = "\n".join(output_lines[1:-1])
+
+                success = True
+                logger.info(f"Comando executado. Output: {len(output)} bytes")
+
+            except Exception as e:
+                error_message = str(e)
+                logger.error(f"Erro ao executar comando '{command}': {e}")
+                raise SSHClientError(f"Erro ao executar comando: {e}") from e
+
+            finally:
+                execution_time_ms = int((time.time() - start_time) * 1000)
+                self._log_command_execution(command, execution_time_ms, success, error_message)
 
         return output
 
