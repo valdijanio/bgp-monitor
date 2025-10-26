@@ -11,7 +11,7 @@ from datetime import datetime
 from app.core.ssh_client import ssh_client
 from app.core.database import db
 from app.models.interface import Interface
-from app.services.parser import parse_interface, parse_interface_statistics
+from app.services.parser import parse_interface_brief, parse_interface_statistics
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ def collect_interfaces() -> List[Interface]:
     """
     Coleta informações de todas as interfaces.
 
-    Executa 'display interface' no NE8000 e parseia o resultado.
+    Executa 'display interface brief' no NE8000 e parseia o resultado.
 
     Returns:
         Lista de Interface coletadas
@@ -31,11 +31,11 @@ def collect_interfaces() -> List[Interface]:
     logger.info("Iniciando coleta de interfaces...")
 
     try:
-        # Executar comando no NE8000
-        output = ssh_client.execute_command("display interface")
+        # Executar comando no NE8000 (brief para listar todas)
+        output = ssh_client.execute_command("display interface brief")
 
         # Parsear saída
-        interfaces = parse_interface(output)
+        interfaces = parse_interface_brief(output)
 
         logger.info(f"Coletadas {len(interfaces)} interfaces")
 

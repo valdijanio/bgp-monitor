@@ -30,8 +30,10 @@ class HuaweiSSHClient:
     ALLOWED_COMMANDS = [
         "display bgp peer",
         "display bgp routing-table peer",
+        "display interface brief",
         "display interface",
         "display interface statistics",
+        "display ip interface brief",
         "display cpu-usage",
         "display memory-usage",
         "display version",

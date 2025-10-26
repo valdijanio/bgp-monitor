@@ -14,7 +14,7 @@ from app.models.interface import Interface
 logger = logging.getLogger(__name__)
 
 
-def parse_bgp_peer(output: str) -> List[BGPSession]:
+def parse_bgp_peer(output: str) -> List[BGPSession]:  # noqa: C901
     """
     Parseia a saída do comando 'display bgp peer'.
 
@@ -31,7 +31,7 @@ def parse_bgp_peer(output: str) -> List[BGPSession]:
         output: Saída do comando display bgp peer
 
     Returns:
-        Lista de objetos BGPSession
+        Lista de objetos BGPSession (vazia se não houver peers)
     """
     sessions = []
 
@@ -39,11 +39,24 @@ def parse_bgp_peer(output: str) -> List[BGPSession]:
         # Dividir em linhas
         lines = output.strip().split("\n")
 
+        # Verificar se há realmente dados BGP
+        has_bgp_data = False
+        for line in lines:
+            if "BGP" in line or "Peer" in line or any(c.isdigit() for c in line):
+                has_bgp_data = True
+                break
+
+        if not has_bgp_data:
+            logger.info("Nenhum dado BGP encontrado no output (BGP pode não estar configurado)")
+            return sessions
+
         for line in lines:
             line = line.strip()
 
-            # Pular linhas vazias e cabeçalhos
+            # Pular linhas vazias, cabeçalhos e prompts
             if not line or "Peer" in line or "BGP" in line or "---" in line:
+                continue
+            if line.startswith("<") or line.startswith(">"):
                 continue
 
             # Tentar parsear linha de peer
@@ -73,6 +86,9 @@ def parse_bgp_peer(output: str) -> List[BGPSession]:
 
                 sessions.append(session)
                 logger.debug(f"BGP peer parseado: {peer_ip} - {status}")
+
+        if len(sessions) == 0:
+            logger.info("Nenhuma sessão BGP foi parseada (BGP pode não ter peers configurados)")
 
     except Exception as e:
         logger.error(f"Erro ao parsear BGP peer: {e}")
@@ -122,9 +138,73 @@ def parse_bgp_routing_table_peer(output: str, peer_ip: str) -> Dict[str, int]:
     return result
 
 
+def parse_interface_brief(output: str) -> List[Interface]:
+    """
+    Parseia a saída do comando 'display interface brief'.
+
+    Formato esperado (Huawei NE8000):
+    Interface                   PHY   Protocol  InUti OutUti   inErrors  outErrors
+    Ethernet0/0/0               up    up        0.01%  0.01%       1337          0
+    GigabitEthernet0/7/0(10G)   up    down      4.29% 43.06%          0          0
+
+    Args:
+        output: Saída do comando display interface brief
+
+    Returns:
+        Lista de objetos Interface
+    """
+    interfaces = []
+
+    try:
+        lines = output.strip().split("\n")
+
+        for line in lines:
+            line = line.strip()
+
+            # Pular linhas vazias, cabeçalhos e legendas
+            if not line or "Interface" in line or "PHY" in line:
+                continue
+            if line.startswith("*down") or line.startswith("^down"):
+                continue
+            if line.startswith("(") or line.startswith("InUti"):
+                continue
+
+            # Formato: Nome  PHY  Protocol  InUti  OutUti  inErrors  outErrors
+            # Exemplo: Ethernet0/0/0  up  up  0.01%  0.01%  1337  0
+            parts = line.split()
+
+            if len(parts) < 3:
+                continue
+
+            # Extrair nome da interface (pode ter (10G) no final)
+            name_raw = parts[0]
+            name = re.sub(r"\(\d+G\)", "", name_raw)  # Remove (10G) se houver
+
+            # Status físico e protocolo
+            phy_status = parts[1].lower() if len(parts) > 1 else "unknown"
+            protocol_status = parts[2].lower() if len(parts) > 2 else "unknown"
+
+            # Status geral: UP se ambos UP, senão DOWN
+            if phy_status == "up" and protocol_status == "up":
+                status = "up"
+            else:
+                status = "down"
+
+            interface = Interface(name=name, status=status, description=None, bandwidth_capacity=0)
+
+            interfaces.append(interface)
+            logger.debug(f"Interface parseada (brief): {name} - {status}")
+
+    except Exception as e:
+        logger.error(f"Erro ao parsear interface brief: {e}")
+        logger.debug(f"Output problemático: {output}")
+
+    return interfaces
+
+
 def parse_interface(output: str) -> List[Interface]:
     """
-    Parseia a saída do comando 'display interface'.
+    Parseia a saída do comando 'display interface <name>' (detalhado).
 
     Formato esperado:
     GigabitEthernet0/0/1 current state : UP
@@ -133,55 +213,48 @@ def parse_interface(output: str) -> List[Interface]:
     ...
 
     Args:
-        output: Saída do comando display interface
+        output: Saída do comando display interface <name>
 
     Returns:
-        Lista de objetos Interface
+        Lista de objetos Interface (geralmente 1)
     """
     interfaces = []
 
     try:
-        # Dividir por interfaces (cada interface começa com nome seguido de 'current state')
-        interface_blocks = re.split(
-            r"(?=^[A-Z][a-zA-Z0-9\-/]+\s+current state)", output, flags=re.MULTILINE
+        lines = output.strip().split("\n")
+
+        if not lines:
+            return interfaces
+
+        # Primeira linha tem o nome e status
+        first_line = lines[0]
+        name_match = re.match(r"^([A-Za-z0-9\-/\.]+)\s+current state\s*:\s*(\w+)", first_line)
+
+        if not name_match:
+            logger.warning(f"Não foi possível parsear primeira linha: {first_line}")
+            return interfaces
+
+        name = name_match.group(1)
+        status = name_match.group(2).lower()
+
+        # Procurar descrição
+        description = None
+        for line in lines:
+            if "Description" in line:
+                desc_match = re.search(r"Description:\s*(.+)", line)
+                if desc_match:
+                    description = desc_match.group(1).strip()
+                break
+
+        interface = Interface(
+            name=name, status=status, description=description, bandwidth_capacity=0
         )
 
-        for block in interface_blocks:
-            if not block.strip():
-                continue
-
-            lines = block.strip().split("\n")
-            if not lines:
-                continue
-
-            # Primeira linha tem o nome e status
-            first_line = lines[0]
-            name_match = re.match(r"^([A-Za-z0-9\-/]+)\s+current state\s*:\s*(\w+)", first_line)
-
-            if not name_match:
-                continue
-
-            name = name_match.group(1)
-            status = name_match.group(2).lower()
-
-            # Procurar descrição
-            description = None
-            for line in lines:
-                if "Description" in line:
-                    desc_match = re.search(r"Description:\s*(.+)", line)
-                    if desc_match:
-                        description = desc_match.group(1).strip()
-                    break
-
-            interface = Interface(
-                name=name, status=status, description=description, bandwidth_capacity=0
-            )
-
-            interfaces.append(interface)
-            logger.debug(f"Interface parseada: {name} - {status}")
+        interfaces.append(interface)
+        logger.debug(f"Interface parseada: {name} - {status}")
 
     except Exception as e:
-        logger.error(f"Erro ao parsear interfaces: {e}")
+        logger.error(f"Erro ao parsear interface: {e}")
         logger.debug(f"Output problemático: {output}")
 
     return interfaces
