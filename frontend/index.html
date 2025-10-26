@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BGP Monitor - Huawei NE8000</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>BGP Monitor - Huawei NE8000</h1>
+            <p class="subtitle">Sistema de Monitoramento em Tempo Real</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="status-cards">
+            <div class="card">
+                <h3>Sessões BGP</h3>
+                <div class="card-content">
+                    <div class="stat" id="bgp-total">-</div>
+                    <div class="stat-label">Total</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>BGP Established</h3>
+                <div class="card-content status-up">
+                    <div class="stat" id="bgp-up">-</div>
+                    <div class="stat-label">Ativos</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>BGP Down</h3>
+                <div class="card-content status-down">
+                    <div class="stat" id="bgp-down">-</div>
+                    <div class="stat-label">Inativos</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Interfaces Ativas</h3>
+                <div class="card-content status-up">
+                    <div class="stat" id="interfaces-up">-</div>
+                    <div class="stat-label">UP</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <div class="panel">
+                <h2>Sessões BGP</h2>
+                <div id="bgp-sessions">
+                    <p class="loading">Carregando dados...</p>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Eventos Recentes</h2>
+                <div id="events">
+                    <p class="loading">Carregando eventos...</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Interfaces</h2>
+            <div id="interfaces">
+                <p class="loading">Carregando interfaces...</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 BGP Monitor - Sistema READ-ONLY</p>
+            <p><a href="/docs">Documentação da API</a></p>
+        </div>
+    </footer>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
