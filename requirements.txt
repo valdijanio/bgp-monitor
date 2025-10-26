@@ -1,0 +1,9 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+pydantic==2.9.2
+pydantic-settings==2.6.0
+paramiko==3.5.0
+apscheduler==3.10.4
+python-dotenv==1.0.1
+black==24.10.0
+flake8==7.1.1
