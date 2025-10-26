@@ -115,42 +115,7 @@ async def get_interfaces(
         raise HTTPException(status_code=500, detail="Erro ao buscar interfaces")
 
 
-@router.get("/{name}", response_model=InterfaceResponse)
-async def get_interface(name: str):
-    """
-    Obtém detalhes de uma interface específica.
-
-    Args:
-        name: Nome da interface
-
-    Returns:
-        Detalhes da interface
-    """
-    try:
-        query = "SELECT * FROM interfaces WHERE name = ?"
-        interface = db.execute_single(query, (name,))
-
-        if not interface:
-            raise HTTPException(status_code=404, detail=f"Interface {name} não encontrada")
-
-        # Calcular conversões de unidades
-        interface["bandwidth_in_mbps"] = round(interface["bandwidth_in_bps"] / 1_000_000, 2)
-        interface["bandwidth_out_mbps"] = round(interface["bandwidth_out_bps"] / 1_000_000, 2)
-        interface["bandwidth_in_gbps"] = round(interface["bandwidth_in_bps"] / 1_000_000_000, 4)
-        interface["bandwidth_out_gbps"] = round(interface["bandwidth_out_bps"] / 1_000_000_000, 4)
-        interface["total_errors"] = interface["errors_in"] + interface["errors_out"]
-        interface["total_discards"] = interface["discards_in"] + interface["discards_out"]
-
-        return interface
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Erro ao buscar interface {name}: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao buscar interface")
-
-
-@router.get("/{name}/stats", response_model=InterfaceStatsResponse)
+@router.get("/{name:path}/stats", response_model=InterfaceStatsResponse)
 async def get_interface_stats(name: str):
     """
     Obtém estatísticas de uma interface específica.
@@ -183,7 +148,7 @@ async def get_interface_stats(name: str):
         raise HTTPException(status_code=500, detail="Erro ao buscar estatísticas")
 
 
-@router.get("/{name}/history", response_model=List[InterfaceHistoryResponse])
+@router.get("/{name:path}/history", response_model=List[InterfaceHistoryResponse])
 async def get_interface_history(
     name: str,
     limit: int = Query(100, ge=1, le=1000, description="Número máximo de resultados"),
@@ -217,3 +182,38 @@ async def get_interface_history(
     except Exception as e:
         logger.error(f"Erro ao buscar histórico de {name}: {e}")
         raise HTTPException(status_code=500, detail="Erro ao buscar histórico")
+
+
+@router.get("/{name:path}", response_model=InterfaceResponse)
+async def get_interface(name: str):
+    """
+    Obtém detalhes de uma interface específica.
+
+    Args:
+        name: Nome da interface (pode conter barras, ex: Ethernet0/0/0)
+
+    Returns:
+        Detalhes da interface
+    """
+    try:
+        query = "SELECT * FROM interfaces WHERE name = ?"
+        interface = db.execute_single(query, (name,))
+
+        if not interface:
+            raise HTTPException(status_code=404, detail=f"Interface {name} não encontrada")
+
+        # Calcular conversões de unidades
+        interface["bandwidth_in_mbps"] = round(interface["bandwidth_in_bps"] / 1_000_000, 2)
+        interface["bandwidth_out_mbps"] = round(interface["bandwidth_out_bps"] / 1_000_000, 2)
+        interface["bandwidth_in_gbps"] = round(interface["bandwidth_in_bps"] / 1_000_000_000, 4)
+        interface["bandwidth_out_gbps"] = round(interface["bandwidth_out_bps"] / 1_000_000_000, 4)
+        interface["total_errors"] = interface["errors_in"] + interface["errors_out"]
+        interface["total_discards"] = interface["discards_in"] + interface["discards_out"]
+
+        return interface
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Erro ao buscar interface {name}: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao buscar interface")
