@@ -86,6 +86,7 @@ class HuaweiSSHClient:
         self.shell: Optional[paramiko.Channel] = None
         self.connected = False
         self._command_lock = threading.Lock()  # Lock para serializar comandos
+        self._connection_lock = threading.Lock()  # Lock dedicado para conexões
 
     def _validate_command(self, command: str) -> None:
         """
@@ -152,9 +153,10 @@ class HuaweiSSHClient:
         Raises:
             SSHClientError: Se não conseguir conectar
         """
-        if self.connected and self.client:
-            logger.info("Cliente SSH já está conectado")
-            return
+        with self._connection_lock:
+            if self.connected and self.client:
+                logger.info("Cliente SSH já está conectado")
+                return
 
         try:
             logger.info(f"Conectando ao NE8000 em {self.host}:{self.port}")
@@ -219,11 +221,11 @@ class HuaweiSSHClient:
         # Validar comando antes de executar
         self._validate_command(command)
 
-        if not self.connected or not self.shell:
-            self.connect()
-
         # Lock para serializar comandos (evita exec_command simultâneos)
         with self._command_lock:
+            if not self.connected or not self.shell:
+                self.connect()
+
             start_time = time.time()
             success = False
             error_message = None
