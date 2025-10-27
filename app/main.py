@@ -13,10 +13,14 @@ from app.api import bgp, interfaces, events
 from app.scheduler.jobs import setup_scheduler, start_scheduler, stop_scheduler
 
 # Configurar logging
+logs_dir = Path(__file__).parent.parent / "logs"
+logs_dir.mkdir(parents=True, exist_ok=True)
+log_file_path = logs_dir / "bgp_monitor.log"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("logs/bgp_monitor.log"), logging.StreamHandler()],
+    handlers=[logging.FileHandler(log_file_path), logging.StreamHandler()],
 )
 
 logger = logging.getLogger(__name__)
